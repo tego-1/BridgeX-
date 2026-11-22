@@ -1,2 +1,2 @@
-# BridgeX-
+# BridgeX
 Cartridge Alternative

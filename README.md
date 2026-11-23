@@ -29,6 +29,7 @@ The Makefile sets an iOS 15.0 minimum deployment target; the intended device run
 ├── .gitignore
 ├── Preferences/
 │   ├── Makefile
+│   ├── BridgeXPrefs.plist
 │   └── BridgeXRootListController.m
 └── layout/
     └── Library/PreferenceLoader/Preferences/BridgeX.plist

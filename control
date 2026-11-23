@@ -1,0 +1,9 @@
+Package: com.tego.bridgex
+Name: BridgeX
+Version: 0.1.0
+Architecture: iphoneos-arm
+Description: An experimental rootless iOS tweak foundation. No CarPlay functionality is implemented yet.
+Maintainer: BridgeX contributors
+Author: tego-1
+Section: Tweaks
+Depends: firmware (>= 15.0)

@@ -10,6 +10,3 @@ BridgeX_CFLAGS := -fobjc-arc -Wall -Wextra
 BridgeX_FRAMEWORKS := Foundation
 
 include $(THEOS_MAKE_PATH)/tweak.mk
-
-SUBPROJECTS += Preferences
-include $(THEOS_MAKE_PATH)/aggregate.mk

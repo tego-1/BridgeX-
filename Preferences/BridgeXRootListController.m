@@ -17,7 +17,7 @@
                                                                   detail:nil
                                                                     cell:PSStaticTextCell
                                                                     edit:nil];
-        _specifiers = @[statusGroup, statusItem];
+        _specifiers = [@[statusGroup, statusItem] mutableCopy];
     }
     return _specifiers;
 }

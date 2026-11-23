@@ -1,7 +1,0 @@
-{
-    entry = "BridgeXRootListController";
-    bundle = "BridgeXPrefs";
-    cell = PSLinkCell;
-    label = "BridgeX";
-    isController = 1;
-}

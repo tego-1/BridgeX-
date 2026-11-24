@@ -9,6 +9,7 @@ struct ContentView: View {
     @State private var verboseDiagnosticsEnabled = false
     @State private var settingsMessage = "Not sent to tweak yet"
     @State private var isSavingSettings = false
+    @State private var settingsLoaded = false
 
     private func checkConnection() {
         isChecking = true
@@ -146,7 +147,7 @@ struct ContentView: View {
                                     .foregroundColor(.secondary)
                             }
                         }
-                        .disabled(isSavingSettings || !isConnected)
+                        .disabled(isSavingSettings || !isConnected || !settingsLoaded)
                         .onChange(of: verboseDiagnosticsEnabled) { enabled in
                             isSavingSettings = true
                             settingsMessage = "Sending to SpringBoard..."
@@ -157,7 +158,7 @@ struct ContentView: View {
                                         ? "Saved by the SpringBoard tweak."
                                         : "Could not confirm save. Check tweak connection."
                                     if !saved {
-                                        verboseDiagnosticsEnabled.toggle()
+                                        verboseDiagnosticsEnabled = !enabled
                                     }
                                 }
                             }
@@ -226,6 +227,17 @@ struct ContentView: View {
         }
         .onAppear {
             checkConnection()
+            BridgeXStatusClient.sharedClient().loadVerboseDiagnosticsEnabled { enabled, available in
+                DispatchQueue.main.async {
+                    if available {
+                        verboseDiagnosticsEnabled = enabled
+                        settingsMessage = "Loaded saved preference from SpringBoard."
+                    } else {
+                        settingsMessage = "No saved preference found yet."
+                    }
+                    settingsLoaded = true
+                }
+            }
         }
     }
 }

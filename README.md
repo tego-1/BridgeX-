@@ -2,7 +2,7 @@
 
 BridgeX is an experimental rootless iOS tweak project exploring a CarBridge-style experience on supported rootless iOS devices.
 
-**Current stage: verified injection foundation only.** CarPlay app injection, video playback, touch forwarding, game support, per-app configuration, orientation handling, and all other CarPlay features are **not implemented**. A successful injection test does not mean CarPlay functionality works.
+**Current stage: verified tweak injection, companion-app IPC, and shared preference storage.** CarPlay app injection, video playback, touch forwarding, game support, per-app configuration, orientation handling, and all other CarPlay features are **not implemented**. A successful injection test does not mean CarPlay functionality works.
 
 ## Intended and verified test target
 
@@ -12,7 +12,7 @@ BridgeX is an experimental rootless iOS tweak project exploring a CarBridge-styl
 - Build system: Theos
 - Package scheme: rootless
 - Package identifier: `com.tego.bridgex`
-- Tested package version: `0.1.0-4+debug`
+- App bundle: `com.tego.bridgex`
 
 The Makefile sets an iOS 15.0 minimum deployment target; the test device runs iOS 15.1.
 
@@ -24,12 +24,23 @@ The Makefile sets an iOS 15.0 minimum deployment target; the test device runs iO
 ├── control
 ├── Tweak.m
 ├── BridgeX.plist
-├── LICENSE
-├── README.md
-└── Preferences/       # experimental sources; not currently registered as a Settings pane
+├── BridgeXDiagnostics.h/.m
+├── BridgeXIPC.h/.m
+├── BridgeXSettingsIPC.h/.m
+├── Preferences/
+│   ├── Makefile
+│   ├── BridgeXRootListController.m
+│   ├── Info.plist
+│   └── Root.plist
+├── layout/
+│   └── Library/PreferenceLoader/Preferences/BridgeXPrefs.plist
+├── BridgeXApp/
+└── README.md
 ```
 
-The root-level `BridgeX.plist` is the tweak's injection filter. The separate PreferenceLoader registration was removed while isolating a Settings-related issue; do not assume a BridgeX Settings pane is currently available.
+The root-level `BridgeX.plist` is the tweak's injection filter. The native Settings pane is built as a Theos subproject and registered through PreferenceLoader. Its `Verbose Diagnostics` switch writes the same `com.tego.bridgex` / `VerboseDiagnosticsEnabled` preference used by the companion app's SpringBoard-mediated settings IPC.
+
+**Important:** the switch currently stores and reads the preference only. It does not yet enable additional logging behavior in the tweak.
 
 ## Build environment
 
@@ -42,6 +53,8 @@ Build on macOS with:
 5. Debian packaging tools and `ldid` available to Theos.
 
 If Theos is already installed, do not clone it again; set `THEOS` to the existing installation path. Install any additional dependencies required by your Theos version using the official documentation: https://theos.dev/docs/
+
+The package declares a dependency on PreferenceLoader so the pane can appear in Settings.
 
 ## Build
 
@@ -56,7 +69,9 @@ The package is generated under `packages/`. A successful package build confirms 
 
 ## Install and verify
 
-Transfer the generated package to the jailbroken iPhone and install it with a rootless-compatible package manager. After installation, verify the package status, dynamic library and filter files, and device logs. Remove the package if it causes instability.
+Transfer the generated package to the jailbroken iPhone and install it with a rootless-compatible package manager. After installation, verify that BridgeX appears in Settings, open its preference pane, and change the Verbose Diagnostics switch. Then verify that the companion app reads the same saved value after reopening.
+
+Do not install a package until its contents have been inspected and the build succeeds. If it causes instability, remove the package with the package manager.
 
 For SSH deployment, configure device SSH access and then run:
 
@@ -66,39 +81,56 @@ THEOS_DEVICE_IP=<device-ip> THEOS_DEVICE_PORT=22 make install
 
 Replace the placeholder with the device's reachable address. Do not run this until SSH access is configured.
 
-## Verified baseline — 2026-11-23
+## Verified milestones
+
+### Injection foundation
 
 The following was completed on the intended iPhone 8 / iOS 15.1 / Dopamine test device:
 
 - Theos successfully compiled the ARM64 tweak and generated a Debian package.
-- Package manager reported `com.tego.bridgex` installed, version `0.1.0-4+debug`, architecture `iphoneos-arm64`.
+- The package manager reported `com.tego.bridgex` installed.
 - `/var/jb/Library/MobileSubstrate/DynamicLibraries/BridgeX.dylib` and `BridgeX.plist` were present on-device.
 - After installation and respring, the device remained usable with no obvious crash or freeze.
-- Xcode's connected-device console displayed the exact constructor message:
-  `[BridgeX] Foundation loaded (no CarPlay integration implemented).`
+- Xcode's connected-device console displayed the constructor message: `[BridgeX] Foundation loaded (no CarPlay integration implemented).`
 
-This confirms that the dynamic library was loaded and its constructor executed in the configured injection target. It does **not** verify any CarPlay behavior, preferences UI, or broader runtime correctness.
+This confirms that the dynamic library was loaded and its constructor executed in the configured injection target. It does **not** verify CarPlay behavior.
+
+### Companion app status IPC
+
+- SpringBoard's tweak-side Darwin notification listener starts successfully.
+- The companion app can send a status request and receive the matching nonce response.
+- The app displayed a connected status on the iPhone 8.
+
+This confirms the status IPC round trip, not CarPlay integration.
+
+### Shared preference storage
+
+- The companion app can save the Verbose Diagnostics preference through SpringBoard.
+- After fully closing and reopening the app, it reads back the saved value through SpringBoard IPC.
+
+The native Settings pane integration in this branch still requires a local package build and on-device test. Do not treat it as verified until that test is completed.
 
 ## Implementation status
 
 | Component | Status |
 |---|---|
-| Rootless Theos build | Built successfully |
-| ARM64 package | Generated successfully |
-| Package installation | Verified on target device |
-| Dynamic library and injection filter files | Present on target device |
-| Constructor execution | Confirmed in Xcode device console |
-| Post-respring stability | No obvious crash or freeze observed |
-| Preferences pane | Not currently registered; experimental sources only |
+| Rootless Theos tweak build | Built successfully |
+| ARM64 package and injection | Verified on target device |
+| Startup diagnostics | Verified in device console |
+| SpringBoard ↔ companion app status IPC | Verified |
+| Shared preference storage via companion app | Save and app-relaunch read-back verified |
+| Native Settings preference pane | Under development; requires build and device verification |
+| Verbose logging behavior controlled by preference | Not implemented |
 | CarPlay integration | **Not implemented or tested** |
 
 ## Next milestones
 
-1. Preserve this verified injection baseline.
-2. Improve initialization diagnostics and safe error handling.
-3. Organize the tweak into maintainable modules before adding larger features.
-4. Research the relevant iOS 15 CarPlay architecture and constraints.
-5. Implement and test CarPlay-related functionality incrementally on-device.
+1. Build and inspect the combined tweak + native Settings package.
+2. Verify the BridgeX pane appears in iOS Settings.
+3. Verify native Settings and the companion app read/write the same preference.
+4. Connect the stored diagnostics preference to actual logging behavior.
+5. Research the relevant iOS 15 CarPlay architecture and constraints.
+6. Implement and test CarPlay-related functionality incrementally on-device.
 
 ## License
 

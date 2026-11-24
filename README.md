@@ -113,7 +113,7 @@ This confirms the status IPC round trip, not CarPlay integration.
 - The native Settings pane listens for changes and reloads its switch.
 - The companion app refreshes the preference when returning to the foreground, because iOS may suspend background apps.
 
-The live notification implementation still requires a local Xcode/Theos build and on-device testing.
+The live notification implementation has been built with Theos and Xcode and verified on-device in both directions: native Settings changes update the companion app, and companion-app changes update the native Settings pane without force-closing/reopening either interface.
 
 ## Implementation status
 
@@ -125,16 +125,15 @@ The live notification implementation still requires a local Xcode/Theos build an
 | SpringBoard ↔ companion app status IPC | Verified |
 | Shared preference storage via companion app | Save and app-relaunch read-back verified |
 | Native Settings preference pane | Appears in Settings; shared preference read/write verified on device |
-| Live two-way preference UI updates | Implemented in feature branch; pending build/device verification |
+| Live two-way preference UI updates | Built and verified in both directions on iPhone 8 / iOS 15.1 |
 | Verbose logging behavior controlled by preference | Not implemented |
 | CarPlay integration | **Not implemented or tested** |
 
 ## Next milestones
 
-1. Build and test live two-way preference synchronization.
-2. Connect the stored diagnostics preference to actual logging behavior.
-3. Research the relevant iOS 15 CarPlay architecture and constraints.
-4. Implement and test CarPlay-related functionality incrementally on-device.
+1. Connect the stored diagnostics preference to actual logging behavior.
+2. Research the relevant iOS 15 CarPlay architecture and constraints.
+3. Implement and test CarPlay-related functionality incrementally on-device.
 
 ## License
 

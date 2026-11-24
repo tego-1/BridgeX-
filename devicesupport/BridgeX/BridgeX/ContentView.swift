@@ -6,6 +6,9 @@ struct ContentView: View {
     @State private var isConnected = false
     @State private var isChecking = false
     @State private var hasChecked = false
+    @State private var verboseDiagnosticsEnabled = false
+    @State private var settingsMessage = "Not sent to tweak yet"
+    @State private var isSavingSettings = false
 
     private func checkConnection() {
         isChecking = true
@@ -123,6 +126,50 @@ struct ContentView: View {
                         )
                         .font(.caption)
                         .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(16)
+
+                    // Settings foundation
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("SETTINGS")
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(.secondary)
+
+                        Toggle(isOn: $verboseDiagnosticsEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Verbose diagnostics preference")
+                                    .font(.subheadline.weight(.semibold))
+                                Text("Store this preference in the tweak's settings domain.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .disabled(isSavingSettings || !isConnected)
+                        .onChange(of: verboseDiagnosticsEnabled) { enabled in
+                            isSavingSettings = true
+                            settingsMessage = "Sending to SpringBoard..."
+                            BridgeXStatusClient.shared().setVerboseDiagnosticsEnabled(enabled) { saved in
+                                DispatchQueue.main.async {
+                                    isSavingSettings = false
+                                    settingsMessage = saved
+                                        ? "Saved by the SpringBoard tweak."
+                                        : "Could not confirm save. Check tweak connection."
+                                    if !saved {
+                                        verboseDiagnosticsEnabled.toggle()
+                                    }
+                                }
+                            }
+                        }
+
+                        Text(settingsMessage)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        Text("This is a settings-storage test. It does not change diagnostic logging behavior yet.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
                     }
                     .padding()
                     .background(Color(.secondarySystemBackground))

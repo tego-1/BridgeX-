@@ -22,15 +22,14 @@ static CFStringRef const kBridgeXPreferencesDomain = CFSTR("com.tego.bridgex");
 - (void)viewDidLoad {
     [super viewDidLoad];
 
-    if (self.settingsChangedToken == 0) {
-        __weak typeof(self) weakSelf = self;
-        uint32_t result = notify_register_dispatch(kBridgeXSettingsDidChange,
-            &_settingsChangedToken, dispatch_get_main_queue(), ^(int token) {
-                [weakSelf reloadSpecifiers];
-            });
-        if (result != NOTIFY_STATUS_OK) {
-            self.settingsChangedToken = -1;
-        }
+    self.settingsChangedToken = -1;
+    __weak typeof(self) weakSelf = self;
+    uint32_t result = notify_register_dispatch(kBridgeXSettingsDidChange,
+        &_settingsChangedToken, dispatch_get_main_queue(), ^(int token) {
+            [weakSelf reloadSpecifiers];
+        });
+    if (result != NOTIFY_STATUS_OK) {
+        self.settingsChangedToken = -1;
     }
 }
 
@@ -42,12 +41,14 @@ static CFStringRef const kBridgeXPreferencesDomain = CFSTR("com.tego.bridgex");
 - (void)setPreferenceValue:(id)value specifier:(PSSpecifier *)specifier {
     [super setPreferenceValue:value specifier:specifier];
 
-    CFPreferencesAppSynchronize(kBridgeXPreferencesDomain);
-    notify_post(kBridgeXSettingsDidChange);
+    Boolean saved = CFPreferencesAppSynchronize(kBridgeXPreferencesDomain);
+    if (saved) {
+        notify_post(kBridgeXSettingsDidChange);
+    }
 }
 
 - (void)dealloc {
-    if (self.settingsChangedToken > 0) {
+    if (self.settingsChangedToken >= 0) {
         notify_cancel(self.settingsChangedToken);
     }
 }

@@ -13,7 +13,7 @@ struct ContentView: View {
     private func checkConnection() {
         isChecking = true
 
-        BridgeXStatusClient.shared().checkStatus { connected in
+        BridgeXStatusClient.sharedClient().checkStatus { connected in
             DispatchQueue.main.async {
                 isConnected = connected
                 isChecking = false
@@ -150,7 +150,7 @@ struct ContentView: View {
                         .onChange(of: verboseDiagnosticsEnabled) { enabled in
                             isSavingSettings = true
                             settingsMessage = "Sending to SpringBoard..."
-                            BridgeXStatusClient.shared().setVerboseDiagnosticsEnabled(enabled) { saved in
+                            BridgeXStatusClient.sharedClient().setVerboseDiagnosticsEnabled(enabled) { saved in
                                 DispatchQueue.main.async {
                                     isSavingSettings = false
                                     settingsMessage = saved
@@ -203,7 +203,7 @@ struct ContentView: View {
                             icon: "gearshape",
                             title: "Tweak Settings",
                             subtitle: "Configure BridgeX preferences",
-                            status: "PLANNED"
+                            status: "SETTINGS TEST"
                         )
                     }
                     .padding()

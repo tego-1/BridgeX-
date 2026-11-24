@@ -5,7 +5,7 @@ THEOS_PACKAGE_SCHEME := rootless
 include $(THEOS)/makefiles/common.mk
 
 TWEAK_NAME := BridgeX
-BridgeX_FILES := Tweak.m BridgeXDiagnostics.m BridgeXIPC.m
+BridgeX_FILES := Tweak.m BridgeXDiagnostics.m BridgeXIPC.m BridgeXSettingsIPC.m
 BridgeX_CFLAGS := -fobjc-arc -Wall -Wextra
 BridgeX_FRAMEWORKS := Foundation
 

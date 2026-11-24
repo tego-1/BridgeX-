@@ -6,11 +6,15 @@ struct ContentView: View {
     @State private var isConnected = false
     @State private var isChecking = false
     @State private var hasChecked = false
+    @State private var verboseDiagnosticsEnabled = false
+    @State private var settingsMessage = "Not sent to tweak yet"
+    @State private var isSavingSettings = false
+    @State private var settingsLoaded = false
 
     private func checkConnection() {
         isChecking = true
 
-        BridgeXStatusClient.shared().checkStatus { connected in
+        BridgeXStatusClient.sharedClient().checkStatus { connected in
             DispatchQueue.main.async {
                 isConnected = connected
                 isChecking = false
@@ -128,6 +132,50 @@ struct ContentView: View {
                     .background(Color(.secondarySystemBackground))
                     .cornerRadius(16)
 
+                    // Settings foundation
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("SETTINGS")
+                            .font(.caption.weight(.bold))
+                            .foregroundColor(.secondary)
+
+                        Toggle(isOn: $verboseDiagnosticsEnabled) {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Verbose diagnostics preference")
+                                    .font(.subheadline.weight(.semibold))
+                                Text("Store this preference in the tweak's settings domain.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .disabled(isSavingSettings || !isConnected || !settingsLoaded)
+                        .onChange(of: verboseDiagnosticsEnabled) { enabled in
+                            isSavingSettings = true
+                            settingsMessage = "Sending to SpringBoard..."
+                            BridgeXStatusClient.sharedClient().setVerboseDiagnosticsEnabled(enabled) { saved in
+                                DispatchQueue.main.async {
+                                    isSavingSettings = false
+                                    settingsMessage = saved
+                                        ? "Saved by the SpringBoard tweak."
+                                        : "Could not confirm save. Check tweak connection."
+                                    if !saved {
+                                        verboseDiagnosticsEnabled = !enabled
+                                    }
+                                }
+                            }
+                        }
+
+                        Text(settingsMessage)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+
+                        Text("This is a settings-storage test. It does not change diagnostic logging behavior yet.")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.secondarySystemBackground))
+                    .cornerRadius(16)
+
                     // Features
                     VStack(alignment: .leading, spacing: 12) {
                         Text("FEATURES")
@@ -156,7 +204,7 @@ struct ContentView: View {
                             icon: "gearshape",
                             title: "Tweak Settings",
                             subtitle: "Configure BridgeX preferences",
-                            status: "PLANNED"
+                            status: "SETTINGS TEST"
                         )
                     }
                     .padding()
@@ -179,6 +227,17 @@ struct ContentView: View {
         }
         .onAppear {
             checkConnection()
+            BridgeXStatusClient.sharedClient().loadVerboseDiagnosticsEnabled { enabled, available in
+                DispatchQueue.main.async {
+                    if available {
+                        verboseDiagnosticsEnabled = enabled
+                        settingsMessage = "Loaded saved preference from SpringBoard."
+                    } else {
+                        settingsMessage = "No saved preference found yet."
+                    }
+                    settingsLoaded = true
+                }
+            }
         }
     }
 }

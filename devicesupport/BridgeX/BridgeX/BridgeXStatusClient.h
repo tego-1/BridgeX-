@@ -2,9 +2,6 @@
 //  BridgeXStatusClient.h
 //  BridgeX
 //
-//  Created by William Stephenson on 11/24/26.
-//
-
 
 #import <Foundation/Foundation.h>
 
@@ -13,5 +10,8 @@
 + (instancetype)sharedClient;
 
 - (void)checkStatusWithCompletion:(void (^)(BOOL connected))completion;
+- (void)setVerboseDiagnosticsEnabled:(BOOL)enabled
+                          completion:(void (^)(BOOL saved))completion;
+- (void)loadVerboseDiagnosticsEnabledWithCompletion:(void (^)(BOOL enabled, BOOL available))completion;
 
 @end

@@ -2,3 +2,10 @@
 packages/
 .DS_Store
 *.deb
+# Xcode user-specific files
+*.xcuserstate
+xcuserdata/
+project.xcworkspace/
+
+# macOS metadata
+.DS_Store

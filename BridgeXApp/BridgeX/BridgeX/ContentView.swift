@@ -14,7 +14,7 @@ struct ContentView: View {
     private func checkConnection() {
         isChecking = true
 
-        BridgeXStatusClient.sharedClient().checkStatus { connected in
+        BridgeXStatusClient.shared().checkStatus { connected in
             DispatchQueue.main.async {
                 isConnected = connected
                 isChecking = false
@@ -151,7 +151,7 @@ struct ContentView: View {
                         .onChange(of: verboseDiagnosticsEnabled) { enabled in
                             isSavingSettings = true
                             settingsMessage = "Sending to SpringBoard..."
-                            BridgeXStatusClient.sharedClient().setVerboseDiagnosticsEnabled(enabled) { saved in
+                            BridgeXStatusClient.shared().setVerboseDiagnosticsEnabled(enabled) { saved in
                                 DispatchQueue.main.async {
                                     isSavingSettings = false
                                     settingsMessage = saved
@@ -227,7 +227,7 @@ struct ContentView: View {
         }
         .onAppear {
             checkConnection()
-            BridgeXStatusClient.sharedClient().loadVerboseDiagnosticsEnabled { enabled, available in
+            BridgeXStatusClient.shared().loadVerboseDiagnosticsEnabled { enabled, available in
                 DispatchQueue.main.async {
                     if available {
                         verboseDiagnosticsEnabled = enabled

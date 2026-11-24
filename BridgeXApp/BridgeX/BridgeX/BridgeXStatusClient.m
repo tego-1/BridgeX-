@@ -33,6 +33,8 @@ static const char * const kBridgeXSettingsDidChange = "com.tego.bridgex.settings
 @property (nonatomic, copy) void (^settingsCompletion)(BOOL saved);
 @property (nonatomic, copy) void (^settingsReadCompletion)(BOOL enabled, BOOL available);
 @property (nonatomic, copy) void (^settingsChangedHandler)(BOOL enabled, BOOL available);
+- (void)refreshSettingsAfterChangeNotification;
+- (void)finishSettingsRead:(BOOL)enabled available:(BOOL)available requestID:(uint64_t)requestID;
 @end
 
 @implementation BridgeXStatusClient

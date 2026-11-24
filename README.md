@@ -103,12 +103,17 @@ This confirms that the dynamic library was loaded and its constructor executed i
 
 This confirms the status IPC round trip, not CarPlay integration.
 
-### Shared preference storage
+### Shared preference storage and live synchronization
 
 - The companion app can save the Verbose Diagnostics preference through SpringBoard.
-- After fully closing and reopening the app, it reads back the saved value through SpringBoard IPC.
+- The native Settings pane and companion app use the same `com.tego.bridgex` preference domain and `VerboseDiagnosticsEnabled` key.
+- Save/read-back and bidirectional preference persistence have been verified on an iPhone 8 running iOS 15.1.
+- Live synchronization uses a dedicated Darwin notification after a successful preference write.
+- The companion app listens for changes and reads the latest value through SpringBoard IPC.
+- The native Settings pane listens for changes and reloads its switch.
+- The companion app refreshes the preference when returning to the foreground, because iOS may suspend background apps.
 
-The native Settings pane integration in this branch still requires a local package build and on-device test. Do not treat it as verified until that test is completed.
+The live notification implementation has been built with Theos and Xcode and verified on-device in both directions: native Settings changes update the companion app, and companion-app changes update the native Settings pane without force-closing/reopening either interface.
 
 ## Implementation status
 
@@ -119,18 +124,16 @@ The native Settings pane integration in this branch still requires a local packa
 | Startup diagnostics | Verified in device console |
 | SpringBoard ↔ companion app status IPC | Verified |
 | Shared preference storage via companion app | Save and app-relaunch read-back verified |
-| Native Settings preference pane | Under development; requires build and device verification |
+| Native Settings preference pane | Appears in Settings; shared preference read/write verified on device |
+| Live two-way preference UI updates | Built and verified in both directions on iPhone 8 / iOS 15.1 |
 | Verbose logging behavior controlled by preference | Not implemented |
 | CarPlay integration | **Not implemented or tested** |
 
 ## Next milestones
 
-1. Build and inspect the combined tweak + native Settings package.
-2. Verify the BridgeX pane appears in iOS Settings.
-3. Verify native Settings and the companion app read/write the same preference.
-4. Connect the stored diagnostics preference to actual logging behavior.
-5. Research the relevant iOS 15 CarPlay architecture and constraints.
-6. Implement and test CarPlay-related functionality incrementally on-device.
+1. Connect the stored diagnostics preference to actual logging behavior.
+2. Research the relevant iOS 15 CarPlay architecture and constraints.
+3. Implement and test CarPlay-related functionality incrementally on-device.
 
 ## License
 

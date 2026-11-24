@@ -14,6 +14,7 @@ static const char * const kBridgeXSettingsChanged = "com.tego.bridgex.settings.c
 static const char * const kBridgeXSettingsAcknowledged = "com.tego.bridgex.settings.acknowledged";
 static const char * const kBridgeXSettingsReadRequest = "com.tego.bridgex.settings.read";
 static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.settings.read.response";
+static const char * const kBridgeXSettingsDidChange = "com.tego.bridgex.settings.didChange";
 
 @interface BridgeXStatusClient ()
 @property (nonatomic, assign) int requestToken;
@@ -22,13 +23,16 @@ static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.setti
 @property (nonatomic, assign) int settingsAckToken;
 @property (nonatomic, assign) int settingsReadToken;
 @property (nonatomic, assign) int settingsReadResponseToken;
+@property (nonatomic, assign) int settingsChangedToken;
 @property (nonatomic, assign) uint64_t activeNonce;
 @property (nonatomic, assign) uint64_t activeSettingsRequestID;
 @property (nonatomic, assign) uint64_t activeSettingsReadID;
 @property (nonatomic, assign) uint64_t nextSettingsRequestID;
+@property (nonatomic, assign) BOOL pendingSettingsRefresh;
 @property (nonatomic, copy) void (^completion)(BOOL connected);
 @property (nonatomic, copy) void (^settingsCompletion)(BOOL saved);
 @property (nonatomic, copy) void (^settingsReadCompletion)(BOOL enabled, BOOL available);
+@property (nonatomic, copy) void (^settingsChangedHandler)(BOOL enabled, BOOL available);
 @end
 
 @implementation BridgeXStatusClient
@@ -45,6 +49,7 @@ static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.setti
     if (self) {
         _requestToken = _responseToken = _settingsToken = _settingsAckToken = -1;
         _settingsReadToken = _settingsReadResponseToken = -1;
+        _settingsChangedToken = -1;
 
         uint32_t result = notify_register_check(kBridgeXStatusRequest, &_requestToken);
         if (result != NOTIFY_STATUS_OK) _requestToken = -1;
@@ -85,15 +90,55 @@ static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.setti
                 if (requestID == self.activeSettingsReadID && requestID != 0) {
                     BOOL available = (state & 2ULL) != 0;
                     BOOL enabled = (state & 1ULL) != 0;
-                    void (^completion)(BOOL, BOOL) = self.settingsReadCompletion;
-                    self.settingsReadCompletion = nil;
-                    self.activeSettingsReadID = 0;
-                    if (completion) completion(enabled, available);
+                    [self finishSettingsRead:enabled available:available requestID:requestID];
                 }
             });
         if (result != NOTIFY_STATUS_OK) _settingsReadResponseToken = -1;
     }
     return self;
+}
+
+- (void)observeVerboseDiagnosticsChangesWithHandler:(void (^)(BOOL, BOOL))handler {
+    self.settingsChangedHandler = handler;
+    if (self.settingsChangedToken >= 0) return;
+
+    uint32_t result = notify_register_dispatch(kBridgeXSettingsDidChange,
+        &_settingsChangedToken, dispatch_get_main_queue(), ^(int token) {
+            if (self.settingsReadCompletion) {
+                self.pendingSettingsRefresh = YES;
+                return;
+            }
+            [self refreshSettingsAfterChangeNotification];
+        });
+    if (result != NOTIFY_STATUS_OK) {
+        self.settingsChangedToken = -1;
+    }
+}
+
+- (void)refreshSettingsAfterChangeNotification {
+    if (!self.settingsChangedHandler) return;
+    [self loadVerboseDiagnosticsEnabledWithCompletion:^(BOOL enabled, BOOL available) {
+        void (^handler)(BOOL, BOOL) = self.settingsChangedHandler;
+        if (handler) handler(enabled, available);
+    }];
+}
+
+- (void)finishSettingsRead:(BOOL)enabled
+                 available:(BOOL)available
+                 requestID:(uint64_t)requestID {
+    if (requestID != self.activeSettingsReadID || !self.settingsReadCompletion) return;
+
+    void (^completion)(BOOL, BOOL) = self.settingsReadCompletion;
+    self.settingsReadCompletion = nil;
+    self.activeSettingsReadID = 0;
+    completion(enabled, available);
+
+    if (self.pendingSettingsRefresh) {
+        self.pendingSettingsRefresh = NO;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self refreshSettingsAfterChangeNotification];
+        });
+    }
 }
 
 - (void)checkStatusWithCompletion:(void (^)(BOOL))completion {
@@ -173,19 +218,13 @@ static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.setti
     self.settingsReadCompletion = completion;
     if (notify_set_state(self.settingsReadToken, requestID) != NOTIFY_STATUS_OK ||
         notify_post(kBridgeXSettingsReadRequest) != NOTIFY_STATUS_OK) {
-        void (^finish)(BOOL, BOOL) = self.settingsReadCompletion;
-        self.settingsReadCompletion = nil;
-        self.activeSettingsReadID = 0;
-        if (finish) finish(NO, NO);
+        [self finishSettingsRead:NO available:NO requestID:requestID];
         return;
     }
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 3 * NSEC_PER_SEC),
         dispatch_get_main_queue(), ^{
             if (self.activeSettingsReadID != requestID) return;
-            void (^finish)(BOOL, BOOL) = self.settingsReadCompletion;
-            self.settingsReadCompletion = nil;
-            self.activeSettingsReadID = 0;
-            if (finish) finish(NO, NO);
+            [self finishSettingsRead:NO available:NO requestID:requestID];
         });
 }
 

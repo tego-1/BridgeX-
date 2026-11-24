@@ -6,4 +6,4 @@ Description: An experimental rootless iOS tweak foundation. No CarPlay functiona
 Maintainer: BridgeX contributors
 Author: tego-1
 Section: Tweaks
-Depends: firmware (>= 15.0)
+Depends: firmware (>= 15.0), preferenceloader

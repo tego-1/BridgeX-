@@ -3,6 +3,8 @@ import SwiftUI
 
 struct ContentView: View {
 
+    @Environment(\.scenePhase) private var scenePhase
+
     @State private var isConnected = false
     @State private var isChecking = false
     @State private var hasChecked = false
@@ -10,6 +12,20 @@ struct ContentView: View {
     @State private var settingsMessage = "Not sent to tweak yet"
     @State private var isSavingSettings = false
     @State private var settingsLoaded = false
+
+    private func refreshSettingsPreference(statusMessage: String) {
+        BridgeXStatusClient.shared().loadVerboseDiagnosticsEnabled { enabled, available in
+            DispatchQueue.main.async {
+                if available {
+                    verboseDiagnosticsEnabled = enabled
+                    settingsMessage = statusMessage
+                    settingsLoaded = true
+                } else {
+                    settingsMessage = "Could not read the saved preference from SpringBoard."
+                }
+            }
+        }
+    }
 
     private func checkConnection() {
         isChecking = true
@@ -227,16 +243,20 @@ struct ContentView: View {
         }
         .onAppear {
             checkConnection()
-            BridgeXStatusClient.shared().loadVerboseDiagnosticsEnabled { enabled, available in
+            BridgeXStatusClient.shared().observeVerboseDiagnosticsChanges { enabled, available in
                 DispatchQueue.main.async {
                     if available {
                         verboseDiagnosticsEnabled = enabled
-                        settingsMessage = "Loaded saved preference from SpringBoard."
-                    } else {
-                        settingsMessage = "No saved preference found yet."
+                        settingsMessage = "Preference synchronized live with SpringBoard."
+                        settingsLoaded = true
                     }
-                    settingsLoaded = true
                 }
+            }
+            refreshSettingsPreference(statusMessage: "Loaded saved preference from SpringBoard.")
+        }
+        .onChange(of: scenePhase) { phase in
+            if phase == .active {
+                refreshSettingsPreference(statusMessage: "Preference refreshed when BridgeX became active.")
             }
         }
     }

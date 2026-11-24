@@ -13,5 +13,6 @@
 - (void)setVerboseDiagnosticsEnabled:(BOOL)enabled
                           completion:(void (^)(BOOL saved))completion;
 - (void)loadVerboseDiagnosticsEnabledWithCompletion:(void (^)(BOOL enabled, BOOL available))completion;
+- (void)observeVerboseDiagnosticsChangesWithHandler:(void (^)(BOOL enabled, BOOL available))handler;
 
 @end

@@ -4,6 +4,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 
 static const char * const kBridgeXSettingsChanged = "com.tego.bridgex.settings.changed";
+static const char * const kBridgeXSettingsDidChange = "com.tego.bridgex.settings.didChange";
 static const char * const kBridgeXSettingsAcknowledged = "com.tego.bridgex.settings.acknowledged";
 static const char * const kBridgeXSettingsReadRequest = "com.tego.bridgex.settings.read";
 static const char * const kBridgeXSettingsReadResponse = "com.tego.bridgex.settings.read.response";
@@ -29,6 +30,10 @@ static void BridgeXHandleSettingsChange(int token) {
                              enabled ? kCFBooleanTrue : kCFBooleanFalse,
                              kBridgeXPreferencesDomain);
     Boolean saved = CFPreferencesAppSynchronize(kBridgeXPreferencesDomain);
+    if (saved) {
+        uint32_t changeResult = notify_post(kBridgeXSettingsDidChange);
+        NSLog(@"[BridgeX][Settings] Broadcast settings change (%u).", changeResult);
+    }
 
     uint64_t acknowledgement = (requestID << 2) |
                                (saved ? 2ULL : 0ULL) |

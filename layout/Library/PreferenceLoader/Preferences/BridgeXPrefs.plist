@@ -3,6 +3,7 @@
         bundle = BridgeXPrefs;
         cell = PSLinkCell;
         detail = BridgeXRootListController;
+        isController = true;
         label = BridgeX;
     };
 }

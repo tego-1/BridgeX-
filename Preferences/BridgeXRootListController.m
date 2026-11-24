@@ -25,7 +25,7 @@ static CFStringRef const kBridgeXPreferencesDomain = CFSTR("com.tego.bridgex");
     self.settingsChangedToken = -1;
     __weak typeof(self) weakSelf = self;
     uint32_t result = notify_register_dispatch(kBridgeXSettingsDidChange,
-        &_settingsChangedToken, dispatch_get_main_queue(), ^(int token) {
+        &_settingsChangedToken, dispatch_get_main_queue(), ^(int token __unused) {
             [weakSelf reloadSpecifiers];
         });
     if (result != NOTIFY_STATUS_OK) {

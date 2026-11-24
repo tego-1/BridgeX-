@@ -1,0 +1,8 @@
+{
+    entry = {
+        bundle = BridgeXPrefs;
+        cell = PSLinkCell;
+        detail = BridgeXRootListController;
+        label = BridgeX;
+    };
+}

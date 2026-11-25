@@ -8,7 +8,7 @@
             <key>cell</key>
             <string>PSGroupCell</string>
             <key>footerText</key>
-            <string>This switch stores the shared preference. Additional verbose diagnostic logging behavior is not implemented yet.</string>
+            <string>When enabled, BridgeX writes a runtime report to the SpringBoard log at startup. Changes take effect the next time SpringBoard launches.</string>
             <key>label</key>
             <string>Diagnostics</string>
         </dict>

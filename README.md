@@ -2,7 +2,7 @@
 
 BridgeX is an experimental rootless iOS tweak project exploring a CarBridge-style experience on supported rootless iOS devices.
 
-**Current stage: verified tweak injection, companion-app IPC, and shared preference storage.** CarPlay app injection, video playback, touch forwarding, game support, per-app configuration, orientation handling, and all other CarPlay features are **not implemented**. A successful injection test does not mean CarPlay functionality works.
+**Current stage: verified tweak injection, companion-app IPC, shared preference storage, and opt-in startup diagnostics.** CarPlay app injection, video playback, touch forwarding, game support, per-app configuration, orientation handling, and all other CarPlay features are **not implemented**. A successful injection test does not mean CarPlay functionality works.
 
 ## Intended and verified test target
 
@@ -40,7 +40,7 @@ The Makefile sets an iOS 15.0 minimum deployment target; the test device runs iO
 
 The root-level `BridgeX.plist` is the tweak's injection filter. The native Settings pane is built as a Theos subproject and registered through PreferenceLoader. Its `Verbose Diagnostics` switch writes the same `com.tego.bridgex` / `VerboseDiagnosticsEnabled` preference used by the companion app's SpringBoard-mediated settings IPC.
 
-**Important:** the switch currently stores and reads the preference only. It does not yet enable additional logging behavior in the tweak.
+**Verbose Diagnostics behavior:** when enabled, the tweak reads the shared preference during SpringBoard startup and writes a runtime report to the SpringBoard log. A missing or invalid preference is treated as disabled. Changes to the switch take effect on the next SpringBoard launch. The separate one-line foundation startup message remains unconditional.
 
 ## Build environment
 
@@ -126,12 +126,12 @@ The live notification implementation has been built with Theos and Xcode and ver
 | Shared preference storage via companion app | Save and app-relaunch read-back verified |
 | Native Settings preference pane | Appears in Settings; shared preference read/write verified on device |
 | Live two-way preference UI updates | Built and verified in both directions on iPhone 8 / iOS 15.1 |
-| Verbose logging behavior controlled by preference | Not implemented |
+| Opt-in startup runtime report controlled by preference | Implemented in `feature/verbose-diagnostics`; awaiting local build and device verification |
 | CarPlay integration | **Not implemented or tested** |
 
 ## Next milestones
 
-1. Connect the stored diagnostics preference to actual logging behavior.
+1. Build and verify preference-controlled startup diagnostics on the target iPhone.
 2. Research the relevant iOS 15 CarPlay architecture and constraints.
 3. Implement and test CarPlay-related functionality incrementally on-device.
 
